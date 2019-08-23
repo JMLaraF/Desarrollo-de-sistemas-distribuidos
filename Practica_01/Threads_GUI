@@ -1,0 +1,51 @@
+import tkinter as tk
+from tkinter import *
+import random
+from time import sleep
+import threading
+
+class clock:
+	def __init__(self, hours, minutes, seconds):
+		self.h = hours
+		self.m = minutes
+		self.s = seconds
+	def __init__(self):
+		self.h = random.randint(0,23)
+		self.m = random.randint(0,59)
+		self.s = random.randint(0,59)
+
+	def start(self , lbl):
+		while(1):
+			sleep(1)
+			self.s += 1
+			if(self.s == 60):
+				self.s = 0
+				self.m += 1
+			if(self.m == 60):
+				self.m = 0
+				self.h += 1
+			if(self.h == 24):
+				self.h = 0
+			lbl.config(text = "%02d:%02d:%02d" % (self.h , self.m , self.s))
+		#	print("%02d : %02d : %02d" %(self.h , self.m , self.s))
+
+class GUIClock:
+	def __init__(self, win, _x , _y):
+		self.clk = clock()
+		win.title("Window")
+		self.lbl = Label(win, text="%02d:%02d:%02d" % (self.clk.h , self.clk.m , self.clk.s))
+		self.lbl.place(x = _x , y = _y)
+		self.btn = Button
+	#	self.lbl.pack()
+		self.t = threading.Thread(target=self.clk.start , args=(self.lbl, ))
+		self.t.start()
+
+
+win = tk.Tk()
+win.geometry("130x50")
+win.resizable(0,0)
+clk1 = GUIClock(win,0,0)
+clk2 = GUIClock(win,70,0)
+clk3 = GUIClock(win,0,30)
+clk4 = GUIClock(win,70,30)
+win.mainloop()
