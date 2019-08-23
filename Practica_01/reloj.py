@@ -34,8 +34,6 @@ class reloj():
         
     def change_h(self,h):
         self.hours= h
-    
-
 
     def change_status(self):
         if (self.activo):
@@ -51,11 +49,4 @@ class reloj():
 
 
 
-reloj01 = reloj()
-reloj01.show_status()
-reloj01.random_time()
-reloj01.show_status()
-reloj01.local_time()
-reloj01.show_status()
-reloj01.change_h(0)
-reloj01.show_status()
+
