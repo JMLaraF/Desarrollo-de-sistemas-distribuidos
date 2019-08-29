@@ -59,10 +59,10 @@ class randclock(clock):
 class GUIClock:
 	def __init__(self, win, _x , _y):
 		self.clk = clock()
-		win.title("Window")
+		#win.title("Window")
 		self.lbl = Label(win, text="%02d:%02d:%02d" % (self.clk.h , self.clk.m , self.clk.s))
 		self.lbl.grid(row = _x , column = _y, columnspan=2)
-		self.btn = Button(win, text ="configurar reloj", command = popup_clock_config)
+		self.btn = Button(win, text ="configurar reloj", command = lambda: popup_clock_config(self))
 		self.btn.grid(row = _x+1, column = _y)
 		self.btn = Button(win, text ="configurar segundero", command = popup_clock_config)
 		self.btn.grid(row = _x+1, column = _y+1)
@@ -72,14 +72,14 @@ class GUIClock:
 		self.clk.h = int(horas)
 		self.clk.m = int(minutos)
 		self.clk.s = int(segundos)
-		ven.destroy
+
 class GUIClockRand(GUIClock):
 	def __init__(self, win, _x , _y):
 		self.clk = randclock()
-		win.title("Window")
+		#win.title("Window")
 		self.lbl = Label(win, text="%02d:%02d:%02d" % (self.clk.h , self.clk.m , self.clk.s))
 		self.lbl.grid(row = _x , column = _y, columnspan=2)
-		self.btn = Button(win, text ="configurar reloj", command = lambda: popup_clock_config(self.clk))
+		self.btn = Button(win, text ="configurar reloj", command = lambda: popup_clock_config(self))
 		self.btn.grid(row = _x+1, column = _y)
 		self.btn = Button(win, text ="configurar segundero", command = popup_clock_config)
 		self.btn.grid(row = _x+1, column = _y+1)
@@ -101,7 +101,7 @@ def popup_clock_config(Clock):
 	labelSeg.grid(row=3, column=0)
 	entradaSegs=Entry(ven)
 	entradaSegs.grid(row=3, column=1)
-	b1 = Button(ven, text= "Cambiar reloj", command= lambda: GUIClock.setTimeGUI(Clock,self.entradaHoras.get(),self.entradaminutos.get(),self.entradaSegs.get() )  )
+	b1 = Button(ven, text= "Cambiar reloj", command= lambda: GUIClock.setTimeGUI(Clock,entradaHoras.get(),entradaminutos.get(),entradaSegs.get() )  )
 	b1.grid(row=4, column=0)
 
 win = tk.Tk()
