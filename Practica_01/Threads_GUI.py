@@ -105,7 +105,7 @@ def popup_clock_config(Clock):
 	b1.grid(row=4, column=0)
 
 win = tk.Tk()
-win.geometry("530x500")
+win.geometry("530x200")
 win.resizable(1,1)
 clk1 = GUIClock(win,0,0)
 clk2 = GUIClockRand(win,0,3)
