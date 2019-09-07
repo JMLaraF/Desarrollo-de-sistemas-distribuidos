@@ -89,21 +89,21 @@ class GUIClock:		#La GUI del reloj estara definida en esta clase
 		ven.protocol("WM_DELETE_WINDOW", lambda window=ven : self.onCloseWindow(window))
 		entrada=Entry(ven)
 		entrada.grid(row=1, column=1)
-		if ElemAModificar == 0:
+		if ElemAModificar == 0:				# 0 indica que actua sobre horas
 			label1 = Label(ven, text = 'Modificar Horas') #Colocamos labels y entries en la ventana pop up
 			label1.grid(row=0, column=0, columnspan=2)
 			labelHoras = Label(ven, text = 'Introduce las horas')
 			labelHoras.grid(row=1, column=0)
 			b1 = Button(ven, text= "Cambiar horas", command= lambda: GUIClock.setTimeGUI_By_Selection(self,ven,entrada.get(),"h") )
 			b1.grid(row=2, column=0)
-		elif ElemAModificar == 1:
+		elif ElemAModificar == 1:	# 1 indica que actua sobre minutos
 			label1 = Label(ven, text = 'Modificar Minutos')
 			label1.grid(row=0, column=0, columnspan=2)
 			labelminutos = Label(ven, text = 'Introduce los minutos que deseas')
 			labelminutos.grid(row=1, column=0)
 			b1 = Button(ven, text= "Cambiar Minutos", command= lambda: GUIClock.setTimeGUI_By_Selection(self,ven,entrada.get(),"m") )
 			b1.grid(row=2, column=0)
-		elif ElemAModificar == 2:
+		elif ElemAModificar == 2:		# 2 indica que actua sobre segundos
 			label1 = Label(ven, text = 'Modificar segundos')
 			label1.grid(row=0, column=0, columnspan=2)
 			labelSeg = Label(ven, text = 'Introduce los segundos que deseas')
@@ -122,9 +122,9 @@ class GUIClock:		#La GUI del reloj estara definida en esta clase
 		self.clk.status = True
 		window.destroy()
 	
-def RunSocket(clk1):
+def RunSocket(clk1 , type):		#Crea un socket, recibe un reloj y si va a madar informacion sobre horas(0) , minutos(1), segundos(2)
 	with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-		s.bind((HOST, PORT))
+		s.bind((HOST, PORT+type))
 		s.listen()
 		while(1):
 			conn, addr = s.accept()
@@ -133,7 +133,12 @@ def RunSocket(clk1):
 					query = conn.recv(1024)
 					if not query:
 						break
-					conn.sendall(b'%d' % clk1.clk.s)	
+					if(type == 0):	
+						conn.sendall(b'%d' % clk1.clk.h)
+					elif(type == 1):	
+						conn.sendall(b'%d' % clk1.clk.m)	
+					else:
+						conn.sendall(b'%d' % clk1.clk.s)
 				print("AA")
 
 
@@ -143,8 +148,14 @@ win = tk.Tk()
 win.geometry("530x200") #Tamaño de la aplicación
 #win.resizable(1,1)	#Esto permite a la app adaptarse al tamaño
 clk1 = GUIClock(win,0,0)	#iniciamos el reloj maestro en la posicion 0, 0
-ServerThread = threading.Thread(target=RunSocket , args=(clk1 , ))
-ServerThread.setDaemon(True)
-ServerThread.start()
+ServerThreadHours = threading.Thread(target=RunSocket , args=(clk1 , 0, ))
+ServerThreadMinuts = threading.Thread(target=RunSocket , args=(clk1 , 1, ))
+ServerThreadSeconds = threading.Thread(target=RunSocket , args=(clk1 , 2, ))
+ServerThreadHours.setDaemon(True)
+ServerThreadMinuts.setDaemon(True)
+ServerThreadSeconds.setDaemon(True)
+ServerThreadHours.start()
+ServerThreadMinuts.start()
+ServerThreadSeconds.start()
 win.mainloop()
 
