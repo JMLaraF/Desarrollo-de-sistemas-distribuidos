@@ -1,10 +1,13 @@
-import os
 from tkinter import *
 import tkinter as tk
 from datetime import datetime
 import random
 from time import sleep
 import threading
+import socket
+HOST = '127.0.0.1'  # Standard loopback interface address (localhost)
+PORT = 65432        # Port to listen on (non-privileged ports are > 1023)
+
 now = datetime.now() # Fecha y hora actuales
 
 class clock:	#Clase Reloj
@@ -119,10 +122,29 @@ class GUIClock:		#La GUI del reloj estara definida en esta clase
 		self.clk.status = True
 		window.destroy()
 	
-	
+def RunSocket(clk1):
+	with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+		s.bind((HOST, PORT))
+		s.listen()
+		while(1):
+			conn, addr = s.accept()
+			with conn:
+				while(1):
+					query = conn.recv(1024)
+					if not query:
+						break
+					conn.sendall(b'%d' % clk1.clk.s)	
+				print("AA")
+
+
+
 win = tk.Tk()
 
 win.geometry("530x200") #Tamaño de la aplicación
-win.resizable(1,1)	#Esto permite a la app adaptarse al tamaño
+#win.resizable(1,1)	#Esto permite a la app adaptarse al tamaño
 clk1 = GUIClock(win,0,0)	#iniciamos el reloj maestro en la posicion 0, 0
+ServerThread = threading.Thread(target=RunSocket , args=(clk1 , ))
+ServerThread.setDaemon(True)
+ServerThread.start()
 win.mainloop()
+
