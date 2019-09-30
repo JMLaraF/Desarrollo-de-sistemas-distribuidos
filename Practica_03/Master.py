@@ -133,22 +133,31 @@ class GUIClock:		#La GUI del reloj estara definida en esta clase
 def RunSocket(GUIclk):
 	with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 		s.bind((HOST, PORT))
-		s.listen()
-		while(1):
+		s.listen(4)
+		while True:
 			conn, addr = s.accept()
-			with conn:
-				while(1):
-					query = conn.recv(1024)
-					if not query:
-						break
+			print(f"Conection desde {addr} ha sido establecida")
+			conn.send(bytes("Conectado a servidor", "utf-8"))
+			l = conn.recv(1024)
+			while (l):
+				print("Recibiendo...")
+				print(l)
+				l = conn.recv(1024)
+			print("Termine de recibir")
+			conn.send(b'Envio Completado')
+			conn.close()
+			#conn.sendall(b'%02d%02d%02d' % (GUIclk.clk.h , GUIclk.clk.m, GUIclk.clk.s))
+			"""while(1):
+				if not query:
+					break
 					conn.sendall(b'%02d%02d%02d' % (GUIclk.clk.h , GUIclk.clk.m, GUIclk.clk.s)) #
 				print(b'%02d:%02d:%02d' % (GUIclk.clk.h , GUIclk.clk.m, GUIclk.clk.s))
-				print("AA")
+				print("AA")"""
 
 
 win = tk.Tk()
 
-win.geometry("530x200") #Tamaño de la aplicación
+win.geometry("530x300") #Tamaño de la aplicación
 #win.resizable(1,1)	#Esto permite a la app adaptarse al tamaño
 clk1 = GUIClock(win,0,0)	#iniciamos el reloj maestro en la posicion 0, 0
 ServerThread = threading.Thread(target=RunSocket , args=(clk1 , ))
