@@ -5,8 +5,9 @@ import random
 from time import sleep
 import threading
 import socket
-HOST = '127.0.0.1'  # Standard loopback interface address (localhost)
-PORT = 65432        # Port to listen on (non-privileged ports are > 1023)
+#HOST = '127.0.0.1'   Standard loopback interface address (localhost)
+HOST = '192.168.0.10'
+PORT = 9090        # Port to listen on (non-privileged ports are > 1023)
 
 
 now = datetime.now() # Fecha y hora actuales
