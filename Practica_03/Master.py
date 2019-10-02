@@ -51,23 +51,12 @@ class GUIClock:		#La GUI del reloj estara definida en esta clase
 	def __init__(self, win, _x , _y): #win es la ventana en la cual colocaremos el reloj, _x y _y es la posicionamiento tipo grid
 		self.clk = clock(True) #Creamos un atributo del tipo clock
 		#win.title("Window")
-		self.lbl = Label(win, text="%02d:%02d:%02d" % (self.clk.h , self.clk.m , self.clk.s))
-		self.lbl.grid(row = _x , column = _y, columnspan=2)
-		self.btn = Button(win, text ="Modificar horas", command = lambda: self.popup_clock_config(win, 0)  )
-		self.btn.grid(row = _x+1, column = _y)
-		self.btn = Button(win, text ="Enviar horas", command = lambda: self.popup_clock_config(win, 0)  )
-		self.btn.grid(row = _x+1, column = _y+1)
-		self.btn = Button(win, text ="Modificar minutos", command = lambda: self.popup_clock_config(win, 1)  )
-		self.btn.grid(row = _x+2, column = _y)
-		self.btn = Button(win, text ="Enviar minutos", command = lambda: self.popup_clock_config(win, 1)  )
-		self.btn.grid(row = _x+2, column = _y+1)
-		self.btn = Button(win, text ="Modificar segundos", command = lambda: self.popup_clock_config(win, 2)  )
-		self.btn.grid(row = _x+3, column = _y)
-		self.btn = Button(win, text ="Enviar segundos", command = lambda: self.popup_clock_config(win, 2)  )
-		self.btn.grid(row = _x+3, column = _y+1)
-		self.btn = Button(win, text ="configurar segundero", command =lambda: self.popup_clock_config(win, 3)  )
-		self.btn.grid(row = _x+4, column = _y)
-		self.t = threading.Thread(target=self.clk.start , args=(self.lbl, ))
+		self.total = 0
+		self.lblclk = Label(win, text="%02d:%02d:%02d" % (self.clk.h , self.clk.m , self.clk.s))
+		self.lblclk.grid(row = _x , column = _y, columnspan=2)
+		self.lbltotal= Label(win, text="La suma de los elementos recibidos es: %d" %(self.total))
+		self.lbltotal.grid(row=_x+1, column=_y, columnspan=2)
+		self.t = threading.Thread(target=self.clk.start , args=(self.lblclk, ))
 		self.t.setDaemon(True)
 		self.t.start()
 	def setTimeGUI(self,horas, minutos, segundos): #Funcion que establece los valore del reloj
@@ -87,7 +76,7 @@ class GUIClock:		#La GUI del reloj estara definida en esta clase
 			else:
 				self.clk.secTimer = float(value)
 			self.clk.status=True
-			self.lbl.config(text = "%02d:%02d:%02d" % (self.clk.h , self.clk.m , self.clk.s))
+			self.lblclk.config(text = "%02d:%02d:%02d" % (self.clk.h , self.clk.m , self.clk.s))
 			win.destroy()
 	def popup_clock_config(self,win, ElemAModificar):#Funcion para la modificacion de los valores del reloj con GUI
 		self.clk.status=False	#Paramos el reloj
@@ -131,21 +120,36 @@ class GUIClock:		#La GUI del reloj estara definida en esta clase
 		window.destroy()
 
 def RunSocket(GUIclk):
-	with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-		s.bind((HOST, PORT))
-		s.listen(4)
-		while True:
-			conn, addr = s.accept()
+	totalData=0
+	with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s: #Creamos el socket le ponemos el nombre de s, AF_INET=IPV4 SOCK_STREAM=TCP
+		s.bind((HOST, PORT))#Publicamos la ip y puerto
+		s.listen(4)#Aceptaremos maximo 4 conexiones
+		while True:#Loop infinito para siempre estar escucahndo al puerto especificado
+			conn, addr = s.accept() #Aceptar la conexion
 			print(f"Conection desde {addr} ha sido establecida")
 			conn.send(bytes("Conectado a servidor", "utf-8"))
+			totalData=0
 			l = conn.recv(1024)
-			while (l):
+			while (l): #Mientras l reciva algo entrara en este loop
 				print("Recibiendo...")
-				print(l)
+				print(l)	#Recibiremos una cadena de bytes
+				#print (type(l))
+				listofData=l.split(b'\n') #Separamos la cadena de bytes por breaklines
+				print(listofData)#l ahora es una lista con cadenas de bytes
+				for i in range(0, len(listofData)):
+					if ( listofData[i].decode("utf-8")=='' ):
+						listofData[i]=0
+					else:
+						listofData[i] = int(listofData[i].decode("utf-8") ) #se decodifica y castea a entero
+					totalData = listofData[i]+totalData
+					print(totalData)
+				print(listofData)
 				l = conn.recv(1024)
 			print("Termine de recibir")
 			conn.send(b'Envio Completado')
 			conn.close()
+			GUIclk.total = totalData
+			GUIclk.lbltotal.config(text = "La suma de los elementos recibidos %d" %totalData)
 			#conn.sendall(b'%02d%02d%02d' % (GUIclk.clk.h , GUIclk.clk.m, GUIclk.clk.s))
 			"""while(1):
 				if not query:
@@ -157,7 +161,7 @@ def RunSocket(GUIclk):
 
 win = tk.Tk()
 
-win.geometry("530x300") #Tamaño de la aplicación
+win.geometry("230x150") #Tamaño de la aplicación
 #win.resizable(1,1)	#Esto permite a la app adaptarse al tamaño
 clk1 = GUIClock(win,0,0)	#iniciamos el reloj maestro en la posicion 0, 0
 ServerThread = threading.Thread(target=RunSocket , args=(clk1 , ))
