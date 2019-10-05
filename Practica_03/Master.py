@@ -5,13 +5,23 @@ import random
 from time import sleep
 import threading
 import socket
+import mysql.connector
+
 #HOST = '127.0.0.1'   Standard loopback interface address (localhost)
-HOST = '192.168.0.10'
-PORT = 9090        # Port to listen on (non-privileged ports are > 1023)
-
-
+HOST = 'localhost'
+PORT = 65432        # Port to listen on (non-privileged ports are > 1023)
 now = datetime.now() # Fecha y hora actuales
 random.seed(99)
+
+mydb = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="",
+    database="Central"
+)
+mycursor = mydb.cursor()
+sqlformula = "INSERT INTO Sumas (resultado, ip, hora) VALUES(%s,%s,%s)"
+
 class clock:	#Clase Reloj
 	def __init__(self , isRandom):
 		if isRandom:
@@ -115,7 +125,6 @@ class GUIClock:		#La GUI del reloj estara definida en esta clase
 			#Timer = float_bin(int(entrada.get), 6)
 			b1 = Button(ven, text= "Cambiar Segundos", command= lambda: GUIClock.setTimeGUI_By_Selection(self,ven,entrada.get(),"t") )
 			b1.grid(row=2, column=0)
-
 	def onCloseWindow(self , window):
 		self.clk.status = True
 		window.destroy()
@@ -151,6 +160,12 @@ def RunSocket(GUIclk):
 			conn.close()
 			GUIclk.total = totalData
 			GUIclk.lbltotal.config(text = "La suma de los elementos recibidos %d" %totalData)
+			hour = str(GUIclk.clk.h).zfill(2) + ":" +str(GUIclk.clk.m).zfill(2)+ ":" +str(GUIclk.clk.s).zfill(2)
+			ip = addr[0]
+			
+			outcome =  (totalData, ip, hour)
+			mycursor.execute(sqlformula,outcome)
+			mydb.commit()
 			#conn.sendall(b'%02d%02d%02d' % (GUIclk.clk.h , GUIclk.clk.m, GUIclk.clk.s))
 			"""while(1):
 				if not query:
@@ -159,10 +174,8 @@ def RunSocket(GUIclk):
 				print(b'%02d:%02d:%02d' % (GUIclk.clk.h , GUIclk.clk.m, GUIclk.clk.s))
 				print("AA")"""
 
-
 win = tk.Tk()
-
-win.geometry("230x150") #Tamaño de la aplicación
+win.geometry("800x600") #Tamaño de la aplicación
 #win.resizable(1,1)	#Esto permite a la app adaptarse al tamaño
 clk1 = GUIClock(win,0,0)	#iniciamos el reloj maestro en la posicion 0, 0
 ServerThread = threading.Thread(target=RunSocket , args=(clk1 , ))

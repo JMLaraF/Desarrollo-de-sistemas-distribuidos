@@ -6,7 +6,9 @@ import tkinter as tk
 import threading
 import random
 
-HOST = '127.0.0.1'  # The server's hostname or IP address
+
+
+HOST = 'localhost'  # The server's hostname or IP address
 PORT = 65432        # The port used by the server
 random.seed(99)
 class clockClient:	#Clase Reloj
@@ -81,7 +83,7 @@ class clockClient:	#Clase Reloj
 
 
 win = tk.Tk()
-win.geometry("400x200")
+win.geometry("800x600")
 #lbl = Label(win , text="%02d" % (0))
 clk1 = clockClient(win,0,0)
 #lbl.grid(row = 0 , column = 0 , columnspan = 2)
