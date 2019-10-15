@@ -1,7 +1,7 @@
 import mysql.connector
 
 
-password = ""
+password = "m0th3l3td3lg4"
 user_db = "root"
 
 mydb = mysql.connector.connect(
@@ -26,4 +26,4 @@ mydb2 = mysql.connector.connect(
 mycursor = mydb2.cursor()
 
 
-mycursor.execute("CREATE TABLE Sumas (resultado INTEGER, ip VARCHAR(25), hora TIME)")
+mycursor.execute("CREATE TABLE IF NOT EXISTS Sumas (resultado INTEGER, ip VARCHAR(25), hora TIME)")
