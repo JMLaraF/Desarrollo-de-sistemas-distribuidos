@@ -1,9 +1,13 @@
 import mysql.connector
 
+
+password = ""
+user_db = "root"
+
 mydb = mysql.connector.connect(
     host="localhost",
-    user="root",
-    passwd="m0th3l3td3lg4"
+    user=user_db,
+    passwd=password
 )
 
 mycursor = mydb.cursor()
@@ -14,8 +18,8 @@ mydb.cmd_reset_connection
 
 mydb2 = mysql.connector.connect(
     host="localhost",
-    user="root",
-    passwd="m0th3l3td3lg4",
+    user=user_db,
+    passwd=password,
     database="Central"
 )
 
