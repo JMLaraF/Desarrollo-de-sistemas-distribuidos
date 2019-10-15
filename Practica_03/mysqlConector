@@ -1,2 +1,3 @@
 To download the mysqlconector
-https://dev.mysql.com/downloads/connector/python/
+sudo apt install python3-pip
+pip3 install mysql-connector-python
