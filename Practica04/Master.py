@@ -8,7 +8,7 @@ import socket
 import mysql.connector
 
 #HOST = '127.0.0.1'   Standard loopback interface address (localhost)
-HOST = 'localhost'
+HOST = '192.168.0.9'
 BKHOST = ""
 PORT = 65432        # Port to listen on (non-privileged ports are > 1023)
 BCKPORT = 65433        # Port to listen on (non-privileged ports are > 1023)
@@ -214,7 +214,7 @@ class Comunicator:
 				hour = str(GUIclk.clk.h).zfill(2) + ":" +str(GUIclk.clk.m).zfill(2)+ ":" +str(GUIclk.clk.s).zfill(2)
 				ip = addr[0]
 
-				self.executeSQLInsert(totalData , ip , hour, GUIclk)
+				self.executeSQLInsert(str(totalData) , ip , hour, GUIclk)
 				if(self.backupEnable):
 					MGS = str(totalData) + " " + str(ip) + " " + str(hour)
 					with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
@@ -224,7 +224,7 @@ class Comunicator:
 
 
 	def executeSQLInsert(self , totalData , ip , hour, GUIclk):
-		GUIclk.lbltotal.config(text = "La suma de los elementos recibidos %d" %totalData)
+		GUIclk.lbltotal.config(text = "La suma de los elementos recibidos %d" %int(totalData))
 		outcome =  (totalData, ip, hour)
 		mycursor.execute(sqlformula,outcome)
 		mydb.commit()
