@@ -159,6 +159,7 @@ class Comunicator:
 
 
 	def listenBackUp(self):
+		global BKHOST
 		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
 			s.bind((HOST , BCKPORT))
 			while not self.backupEnable:
@@ -176,7 +177,7 @@ class Comunicator:
 			while self.backupEnable:
 				data , x = s.recvfrom(1024)
 				args = data.decode('utf-8').split()
-				executeSQLInsert(args[0] , args[1] , args[2])
+				self.executeSQLInsert(args[0] , args[1] , args[2] , GUIclk)
 
 
 
@@ -210,19 +211,20 @@ class Comunicator:
 				conn.send(b'Envio Completado')
 				conn.close()
 				GUIclk.total = totalData
-				GUIclk.lbltotal.config(text = "La suma de los elementos recibidos %d" %totalData)
 				hour = str(GUIclk.clk.h).zfill(2) + ":" +str(GUIclk.clk.m).zfill(2)+ ":" +str(GUIclk.clk.s).zfill(2)
 				ip = addr[0]
 
-				self.executeSQLInsert(totalData , ip , hour)
+				self.executeSQLInsert(totalData , ip , hour, GUIclk)
 				if(self.backupEnable):
 					MGS = str(totalData) + " " + str(ip) + " " + str(hour)
-					with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-						s.sendto(MGS.encode('utf-8') , (BKHOST , BCKPORT))
+					with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+						print("%s %s" % (BKHOST , BCKPORT))
+						sock.sendto(MGS.encode('utf-8') , (BKHOST , BCKPORT))
 
 
 
-	def executeSQLInsert(self , totalData , ip , hour):
+	def executeSQLInsert(self , totalData , ip , hour, GUIclk):
+		GUIclk.lbltotal.config(text = "La suma de los elementos recibidos %d" %totalData)
 		outcome =  (totalData, ip, hour)
 		mycursor.execute(sqlformula,outcome)
 		mydb.commit()
