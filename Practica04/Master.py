@@ -162,17 +162,19 @@ class Comunicator:
 		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
 			s.bind((HOST , BCKPORT))
 			while not self.backupEnable:
-				data , self.addr = s.recvfrom(4)
+				data , addr = s.recvfrom(4)
+				print("LLEGO %s" % str(addr))
 				if(repr(data)[2:-1] == "ACKB"):
+					BKHOST = addr[0]
 					self.backupEnable = True
-					s.sendto(b"ACKB" , self.addr)
+					s.sendto(b"ACKB" , addr)
 		self.listenServer()
 
 	def listenServer(self):
 		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-			s.bind(HOST , BCKPORT)
+			s.bind((HOST , BCKPORT))
 			while self.backupEnable:
-				data , x = s.recv(1024)
+				data , x = s.recvfrom(1024)
 				args = data.decode('utf-8').split()
 				executeSQLInsert(args[0] , args[1] , args[2])
 
@@ -216,7 +218,7 @@ class Comunicator:
 				if(self.backupEnable):
 					MGS = str(totalData) + " " + str(ip) + " " + str(hour)
 					with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-						s.sendto(MGS.encode('utf-8') , (self.addr))
+						s.sendto(MGS.encode('utf-8') , (BKHOST , BCKPORT))
 
 
 
