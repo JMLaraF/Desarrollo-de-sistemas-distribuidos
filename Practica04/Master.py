@@ -136,7 +136,7 @@ class Comunicator:
 		self.backupEnable = False
 		self.addr = ""
 		self.RunListenThread = threading.Thread(target=self.RunSocket , args=(clk1 , ))
-		self.listenBCKThread = threading.Thread(target=self.listenBackUp , args=())		
+		self.listenBCKThread = threading.Thread(target=self.listenBackUp , args=(clk1, ))		
 		self.RunListenThread.setDaemon(True)
 		self.listenBCKThread.setDaemon(True)
 		self.RunListenThread.start()
@@ -158,7 +158,7 @@ class Comunicator:
 		sleep(0.01)
 
 
-	def listenBackUp(self):
+	def listenBackUp(self , clk1):
 		global BKHOST
 		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
 			s.bind((HOST , BCKPORT))
@@ -169,9 +169,9 @@ class Comunicator:
 					BKHOST = addr[0]
 					self.backupEnable = True
 					s.sendto(b"ACKB" , addr)
-		self.listenServer()
+		self.listenServer(clk1)
 
-	def listenServer(self):
+	def listenServer(self , GUIclk):
 		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
 			s.bind((HOST , BCKPORT))
 			while self.backupEnable:
