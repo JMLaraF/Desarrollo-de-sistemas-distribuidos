@@ -8,7 +8,7 @@ import socket
 import mysql.connector
 
 #HOST = '127.0.0.1'   Standard loopback interface address (localhost)
-HOST = 'localhost'
+HOST = '192.168.43.215'
 BKHOST = "192.168.43.213"
 PORT = 65432        # Port to listen on (non-privileged ports are > 1023)
 BCKPORT = 65433        # Port to listen on (non-privileged ports are > 1023)
@@ -144,7 +144,7 @@ class Comunicator:
 		self.backupEnable = False
 		self.addr = ""
 		RunListenThread = threading.Thread(target=self.RunSocket , args=(clk1 , ))
-		listenBCKThread = threading.Thread(target=self.listenBackUp , args=())		
+		listenBCKThread = threading.Thread(target=self.listenBackUp , args=(clk1, ))		
 		turnOnBackUpThread = threading.Thread(target=self.turnOnBackUp , args=(IPBackUp,))
 		RunListenThread.setDaemon(True)
 		turnOnBackUpThread.setDaemon(True)
@@ -162,13 +162,15 @@ class Comunicator:
 					data , self.addr = s.recvfrom(4)
 					if(repr(data)[2:-1] == "ACKB"):
 						self.backupEnable = True
+						s.sendto(b"ACKC" , (HOST , BCKPORT))
 				except EnvironmentError as e:
 					pass
 				
 		sleep(0.01)
 
 
-	def listenBackUp(self):
+	def listenBackUp(self , clk1):
+		global BKHOST
 		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
 			s.bind((HOST , BCKPORT))
 			while not self.backupEnable:
@@ -176,15 +178,16 @@ class Comunicator:
 				if(repr(data)[2:-1] == "ACKB"):
 					self.backupEnable = True
 					s.sendto(b"ACKB" , self.addr)
-		self.listenServer()
+					BKHOST = self.addr[0]
+		self.listenServer(clk1)
 
-	def listenServer(self):
+	def listenServer(self , clk1):
 		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-			s.bind(HOST , BCKPORT)
+			s.bind((HOST , BCKPORT))
 			while self.backupEnable:
-				data , x = s.recv(1024)
+				data , x = s.recvfrom(1024)
 				args = data.decode('utf-8').split()
-				executeSQLInsert(args[0] , args[1] , args[2])
+				self.executeSQLInsert(args[0] , args[1] , args[2] , clk1)
 
 
 
@@ -218,22 +221,23 @@ class Comunicator:
 				conn.send(b'Envio Completado')
 				conn.close()
 				GUIclk.total = totalData
-				GUIclk.lbltotal.config(text = "La suma de los elementos recibidos %d" %totalData)
 				hour = str(GUIclk.clk.h).zfill(2) + ":" +str(GUIclk.clk.m).zfill(2)+ ":" +str(GUIclk.clk.s).zfill(2)
 				ip = addr[0]
 
-				self.executeSQLInsert(totalData , ip , hour)
+				self.executeSQLInsert(str(totalData) , ip , hour , GUIclk)
 				if(self.backupEnable):
 					MGS = str(totalData) + " " + str(ip) + " " + str(hour)
-					with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-						s.sendto(MGS.encode('utf-8') , (self.addr))
+					with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+						print(BKHOST)
+						sock.sendto(MGS.encode('utf-8') , (BKHOST , BCKPORT))
 
 
 
-	def executeSQLInsert(self , totalData , ip , hour):
+	def executeSQLInsert(self , totalData , ip , hour , GUIclk):
 		outcome =  (totalData, ip, hour)
 		mycursor.execute(sqlformula,outcome)
 		mydb.commit()
+		GUIclk.lbltotal.config(text = "La suma de los elementos recibidos %d" %int(totalData))
 
 win = tk.Tk()
 win.geometry("800x600") #Tamaño de la aplicación
