@@ -9,7 +9,7 @@ import mysql.connector
 
 #HOST = '127.0.0.1'   Standard loopback interface address (localhost)
 HOST = 'localhost'
-BKHOST = ""
+BKHOST = "192.168.43.213"
 PORT = 65432        # Port to listen on (non-privileged ports are > 1023)
 BCKPORT = 65433        # Port to listen on (non-privileged ports are > 1023)
 now = datetime.now() # Fecha y hora actuales
@@ -143,13 +143,15 @@ class Comunicator:
 	def __init__(self , clk1 , IPBackUp):
 		self.backupEnable = False
 		self.addr = ""
-		self.RunListenThread = threading.Thread(target=self.RunSocket , args=(clk1 , ))
-		self.listenBCKThread = threading.Thread(target=self.listenBackUp , args=())		
-		self.RunListenThread.setDaemon(True)
-		self.listenBCKThread.setDaemon(True)
-		self.RunListenThread.start()
-		self.listenBCKThread.start()
-		self.turnOnBackUp(IPBackUp)
+		RunListenThread = threading.Thread(target=self.RunSocket , args=(clk1 , ))
+		listenBCKThread = threading.Thread(target=self.listenBackUp , args=())		
+		turnOnBackUpThread = threading.Thread(target=self.turnOnBackUp , args=(IPBackUp,))
+		RunListenThread.setDaemon(True)
+		turnOnBackUpThread.setDaemon(True)
+		listenBCKThread.setDaemon(True)
+		RunListenThread.start()
+		listenBCKThread.start()
+		turnOnBackUpThread.start()
 
 	def turnOnBackUp(self , IPBackUp):
 
