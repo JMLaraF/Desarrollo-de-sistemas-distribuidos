@@ -8,7 +8,7 @@ import socket
 import mysql.connector
 
 #HOST = '127.0.0.1'   Standard loopback interface address (localhost)
-HOST = '192.168.0.9'
+HOST = 'localhost'
 BKHOST = ""
 PORT = 65432        # Port to listen on (non-privileged ports are > 1023)
 BCKPORT = 65433        # Port to listen on (non-privileged ports are > 1023)
@@ -65,11 +65,19 @@ class GUIClock:		#La GUI del reloj estara definida en esta clase
 		self.clk = clock(True) #Creamos un atributo del tipo clock
 		#win.title("Window")
 		self.total = 0
-		self.lblclk = Label(win, text="%02d:%02d:%02d" % (self.clk.h , self.clk.m , self.clk.s))
-		self.lblclk.grid(row = _x , column = _y, columnspan=2)
+		self.lbl = Label(win, text="%02d:%02d:%02d" % (self.clk.h , self.clk.m , self.clk.s))
+		self.lbl.grid(row = _x , column = _y, columnspan=2)
 		self.lbltotal= Label(win, text="La suma de los elementos recibidos es: %d" %(self.total))
 		self.lbltotal.grid(row=_x+1, column=_y, columnspan=2)
-		self.t = threading.Thread(target=self.clk.start , args=(self.lblclk, ))
+		self.btn = Button(win, text ="Modificar horas", command = lambda: self.popup_clock_config(win, 0)  )
+		self.btn.grid(row = _x+2, column = _y)
+		self.btn = Button(win, text ="Modificar minutos", command = lambda: self.popup_clock_config(win, 1)  )
+		self.btn.grid(row = _x+3, column = _y)
+		self.btn = Button(win, text ="Modificar segundos", command = lambda: self.popup_clock_config(win, 2)  )
+		self.btn.grid(row = _x+4, column = _y)
+		self.btn = Button(win, text ="configurar segundero", command =lambda: self.popup_clock_config(win, 3)  )
+		self.btn.grid(row = _x+5, column = _y)
+		self.t = threading.Thread(target=self.clk.start , args=(self.lbl, ))
 		self.t.setDaemon(True)
 		self.t.start()
 	def setTimeGUI(self,horas, minutos, segundos): #Funcion que establece los valore del reloj
@@ -89,30 +97,30 @@ class GUIClock:		#La GUI del reloj estara definida en esta clase
 			else:
 				self.clk.secTimer = float(value)
 			self.clk.status=True
-			self.lblclk.config(text = "%02d:%02d:%02d" % (self.clk.h , self.clk.m , self.clk.s))
+			self.lbl.config(text = "%02d:%02d:%02d" % (self.clk.h , self.clk.m , self.clk.s))
 			win.destroy()
 	def popup_clock_config(self,win, ElemAModificar):#Funcion para la modificacion de los valores del reloj con GUI
 		self.clk.status=False	#Paramos el reloj
 		#ven = Toplevel()	#Creamos un ventana pop up
 		ven = Toplevel()
-		ven.protocol("WM_DELETE_WINDOW", lambda window=ven : self.onCloseWindow(window))#Sobreescribimos el comportamiento al cerrar el popup
+		ven.protocol("WM_DELETE_WINDOW", lambda window=ven : self.onCloseWindow(window))
 		entrada=Entry(ven)
 		entrada.grid(row=1, column=1)
-		if ElemAModificar == 0:
+		if ElemAModificar == 0:				# 0 indica que actua sobre horas
 			label1 = Label(ven, text = 'Modificar Horas') #Colocamos labels y entries en la ventana pop up
 			label1.grid(row=0, column=0, columnspan=2)
 			labelHoras = Label(ven, text = 'Introduce las horas')
 			labelHoras.grid(row=1, column=0)
 			b1 = Button(ven, text= "Cambiar horas", command= lambda: GUIClock.setTimeGUI_By_Selection(self,ven,entrada.get(),"h") )
 			b1.grid(row=2, column=0)
-		elif ElemAModificar == 1:
+		elif ElemAModificar == 1:	# 1 indica que actua sobre minutos
 			label1 = Label(ven, text = 'Modificar Minutos')
 			label1.grid(row=0, column=0, columnspan=2)
 			labelminutos = Label(ven, text = 'Introduce los minutos que deseas')
 			labelminutos.grid(row=1, column=0)
 			b1 = Button(ven, text= "Cambiar Minutos", command= lambda: GUIClock.setTimeGUI_By_Selection(self,ven,entrada.get(),"m") )
 			b1.grid(row=2, column=0)
-		elif ElemAModificar == 2:
+		elif ElemAModificar == 2:		# 2 indica que actua sobre segundos
 			label1 = Label(ven, text = 'Modificar segundos')
 			label1.grid(row=0, column=0, columnspan=2)
 			labelSeg = Label(ven, text = 'Introduce los segundos que deseas')
@@ -124,9 +132,9 @@ class GUIClock:		#La GUI del reloj estara definida en esta clase
 			label1.grid(row=0, column=0, columnspan=2)
 			labelSeg = Label(ven, text = 'Introduce cada cuanto se actualizara el segundero del reloj')
 			labelSeg.grid(row=1, column=0)
-			#Timer = float_bin(int(entrada.get), 6)
 			b1 = Button(ven, text= "Cambiar Segundos", command= lambda: GUIClock.setTimeGUI_By_Selection(self,ven,entrada.get(),"t") )
 			b1.grid(row=2, column=0)
+
 	def onCloseWindow(self , window):
 		self.clk.status = True
 		window.destroy()
@@ -136,7 +144,7 @@ class Comunicator:
 		self.backupEnable = False
 		self.addr = ""
 		self.RunListenThread = threading.Thread(target=self.RunSocket , args=(clk1 , ))
-		self.listenBCKThread = threading.Thread(target=self.listenBackUp , args=(clk1, ))		
+		self.listenBCKThread = threading.Thread(target=self.listenBackUp , args=())		
 		self.RunListenThread.setDaemon(True)
 		self.listenBCKThread.setDaemon(True)
 		self.RunListenThread.start()
@@ -158,26 +166,23 @@ class Comunicator:
 		sleep(0.01)
 
 
-	def listenBackUp(self , clk1):
-		global BKHOST
+	def listenBackUp(self):
 		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
 			s.bind((HOST , BCKPORT))
 			while not self.backupEnable:
-				data , addr = s.recvfrom(4)
-				print("LLEGO %s" % str(addr))
+				data , self.addr = s.recvfrom(4)
 				if(repr(data)[2:-1] == "ACKB"):
-					BKHOST = addr[0]
 					self.backupEnable = True
-					s.sendto(b"ACKB" , addr)
-		self.listenServer(clk1)
+					s.sendto(b"ACKB" , self.addr)
+		self.listenServer()
 
-	def listenServer(self , GUIclk):
+	def listenServer(self):
 		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-			s.bind((HOST , BCKPORT))
+			s.bind(HOST , BCKPORT)
 			while self.backupEnable:
-				data , x = s.recvfrom(1024)
+				data , x = s.recv(1024)
 				args = data.decode('utf-8').split()
-				self.executeSQLInsert(args[0] , args[1] , args[2] , GUIclk)
+				executeSQLInsert(args[0] , args[1] , args[2])
 
 
 
@@ -211,20 +216,19 @@ class Comunicator:
 				conn.send(b'Envio Completado')
 				conn.close()
 				GUIclk.total = totalData
+				GUIclk.lbltotal.config(text = "La suma de los elementos recibidos %d" %totalData)
 				hour = str(GUIclk.clk.h).zfill(2) + ":" +str(GUIclk.clk.m).zfill(2)+ ":" +str(GUIclk.clk.s).zfill(2)
 				ip = addr[0]
 
-				self.executeSQLInsert(str(totalData) , ip , hour, GUIclk)
+				self.executeSQLInsert(totalData , ip , hour)
 				if(self.backupEnable):
 					MGS = str(totalData) + " " + str(ip) + " " + str(hour)
-					with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-						print("%s %s" % (BKHOST , BCKPORT))
-						sock.sendto(MGS.encode('utf-8') , (BKHOST , BCKPORT))
+					with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+						s.sendto(MGS.encode('utf-8') , (self.addr))
 
 
 
-	def executeSQLInsert(self , totalData , ip , hour, GUIclk):
-		GUIclk.lbltotal.config(text = "La suma de los elementos recibidos %d" %int(totalData))
+	def executeSQLInsert(self , totalData , ip , hour):
 		outcome =  (totalData, ip, hour)
 		mycursor.execute(sqlformula,outcome)
 		mydb.commit()
