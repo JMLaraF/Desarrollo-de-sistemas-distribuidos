@@ -159,22 +159,28 @@ class Sincronizador:
 		cadena += str(num)
 		return cadena
 
-	def makeAjust(self,sock , listOfServers):
-		prom = 0 
+	def makeAjust(self,sock , listOfServers , IP):
+		prom = 0
+		enables = 1
+		sock.sendto(b'GTM',(IP,self.PORT))
+		data , addr = sock.recvfrom(100)
+		prom += int(data.decode('utf-8'))
 		if(len(listOfServers) > 0):
 			for x in listOfServers:
 				if(x != "-1"):
 					print("[%s , %d]" % (x , self.PORT) )
+					enables += 1
 					sock.sendto(b'GTM',(x,self.PORT))
 					data , addr = sock.recvfrom(100)
 					prom += int(data.decode('utf-8'))
 					print(prom)
-			prom = prom // len(listOfServers)
+			prom = prom // enables
 			MSG = "CTM " + str(prom)
 			hora = self.toTime(prom)
 			sqlformula = "INSERT INTO Tiempo (hora) VALUES(\"%s\")"
 			self.mycursor.execute(sqlformula,(hora,))
 			self.mydb.commit()
+			sock.sendto(MSG.encode('utf-8'),(IP,self.PORT))
 			for x in listOfServers:
 				if(x != "-1"):
 					sock.sendto(MSG.encode('utf-8'),(x,self.PORT))
@@ -190,7 +196,7 @@ class Sincronizador:
 		while True:
 			try:
 				print("Consulta")
-				self.makeAjust(sock,listOfServers)
+				self.makeAjust(sock,listOfServers,IP)
 				sleep(2.0)
 			except KeyboardInterrupt as k:
 				break
