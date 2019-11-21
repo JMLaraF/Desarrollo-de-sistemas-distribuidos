@@ -7,28 +7,6 @@ import threading
 import socket
 import mysql.connector
 
-#HOST = '127.0.0.1'   Standard loopback interface address (localhost)
-s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-s.connect(("8.8.8.8", 80))
-HOST = s.getsockname()[0]
-s.close()
-print(HOST)
-BKHOST = ""
-PORT = 65432        # Port to listen on (non-privileged ports are > 1023)
-BCKPORT = 65433        # Port to listen on (non-privileged ports are > 1023)
-TIMEPORT = 60432
-now = datetime.now() # Fecha y hora actuales
-random.seed(99)
-
-mydb = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="root",
-    database="Central"
-)
-mycursor = mydb.cursor()
-sqlformula = "INSERT INTO Sumas (resultado, ip, hora) VALUES(%s,%s,%s)"
-
 class clock:	#Clase Reloj
     def __init__(self , isRandom):
         if isRandom:
@@ -160,11 +138,11 @@ class GUIClock:		#La GUI del reloj estara definida en esta clase
         window.destroy()
 
 class Comunicator:
-    def __init__(self , clk1 , IPBackUp):
+    def __init__(self , clk1 , IPBackUp , HOST , BCKPORT , PORT , TIMEPORT):
         self.backupEnable = False
         self.addr = ""
-        RunListenThread = threading.Thread(target=self.RunSocket , args=(clk1 , ))
-        listenBCKThread = threading.Thread(target=self.listenBackUp , args=(clk1, ))		
+        RunListenThread = threading.Thread(target=self.RunSocket , args=(clk1 , HOST , PORT ,))
+        listenBCKThread = threading.Thread(target=self.listenBackUp , args=(clk1, HOST, BCKPORT, ))		
         turnOnBackUpThread = threading.Thread(target=self.turnOnBackUp , args=(IPBackUp,))
         RunListenThread.setDaemon(True)
         turnOnBackUpThread.setDaemon(True)
@@ -172,7 +150,7 @@ class Comunicator:
         RunListenThread.start()
         listenBCKThread.start()
         turnOnBackUpThread.start()
-        listenTimeThread = threading.Thread(target=self.listenTime , args=(clk1,))
+        listenTimeThread = threading.Thread(target=self.listenTime , args=(clk1,HOST,TIMEPORT,))
         listenTimeThread.setDaemon(True)
         listenTimeThread.start()
 
@@ -192,7 +170,7 @@ class Comunicator:
         sleep(0.01)
 
 
-    def listenBackUp(self , clk1):
+    def listenBackUp(self , clk1 , HOST , BCKPORT):
         global BKHOST
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.bind((HOST , BCKPORT))
@@ -214,7 +192,7 @@ class Comunicator:
 
 
 
-    def RunSocket(self,GUIclk):
+    def RunSocket(self,GUIclk, HOST , PORT):
         totalData=0
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s: #Creamos el socket le ponemos el nombre de s, AF_INET=IPV4 SOCK_STREAM=TCP
             s.bind((HOST, PORT))#Publicamos la ip y puerto
@@ -257,12 +235,21 @@ class Comunicator:
 
 
     def executeSQLInsert(self , totalData , ip , hour , GUIclk):
+        mydb = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="root",
+            database="Central"
+        )
+        mycursor = mydb.cursor()
+        
+        sqlformula = "INSERT INTO Sumas (resultado, ip, hora) VALUES(%s,%s,%s)"
         outcome =  (totalData, ip, hour)
         mycursor.execute(sqlformula,outcome)
         mydb.commit()
         GUIclk.lbltotal.config(text = "La suma de los elementos recibidos %d" %int(totalData))
 
-    def listenTime(self , clk1):
+    def listenTime(self , clk1,HOST,TIMEPORT):
         sock = socket.socket(socket.AF_INET , socket.SOCK_DGRAM)
         sock.bind((HOST , TIMEPORT))
         while True:
@@ -273,15 +260,31 @@ class Comunicator:
                 msg = str(clk1.clk.getTimeToNumber())
                 sock.sendto(msg.encode('utf-8'),(addr))
             elif(cmdArgs[0] == "CTM"):
-                clk1.clk.setTimeFromNumber(int(cmdArgs[1]))
+                print(cmdArgs[1])
+                timeThread = threading.Thread(target=clk1.clk.setTimeFromNumber , args=(int(cmdArgs[1]),))
+                timeThread.start()
+#                clk1.clk.setTimeFromNumber(int(cmdArgs[1]))
 #            elif(cmdArgs[0] == "AYC"):
 #                msg = str(clk1.clk.getTimeToNumber())
 #                sock.sendto(msg.encode('utf-8'),(addr))
                 
+class Server:
+    def __init__(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        self.HOST = s.getsockname()[0]
+        s.close()
+        print(self.HOST)
+        self.BKHOST = ""
+        self.PORT = 65432        # Port to listen on (non-privileged ports are > 1023)
+        self.BCKPORT = 65433        # Port to listen on (non-privileged ports are > 1023)
+        self.TIMEPORT = 60432
+        now = datetime.now() # Fecha y hora actuales
+        random.seed(99)
 
-win = tk.Tk()
-win.geometry("800x600") #Tamaño de la aplicación
-#win.resizable(1,1)	#Esto permite a la app adaptarse al tamaño
-clk1 = GUIClock(win,0,0)	#iniciamos el reloj maestro en la posicion 0, 0
-com = Comunicator(clk1,BKHOST)
-win.mainloop()
+        self.win = tk.Tk()
+        self.win.geometry("800x600") #Tamaño de la aplicación
+        #win.resizable(1,1)	#Esto permite a la app adaptarse al tamaño
+        self.clk1 = GUIClock(self.win,0,0)	#iniciamos el reloj maestro en la posicion 0, 0
+        self.com = Comunicator(self.clk1 , self.BKHOST , self.HOST , self.BCKPORT , self.PORT , self.TIMEPORT)
+        self.win.mainloop()

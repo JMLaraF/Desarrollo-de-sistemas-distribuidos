@@ -4,7 +4,7 @@ from time import sleep
 import threading
 
 class Master:
-	def __init__():
+	def __init__(self):
 		self.listOfServers = ["-1"]*256
 		s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		s.connect(("8.8.8.8", 80))
@@ -17,31 +17,35 @@ class Master:
 
 
 	def Run(self):
+		print("Master isRunning")
 		isOneEnable = self.cordinador.mapListOfServers()
 		sock = socket.socket(socket.AF_INET , socket.SOCK_DGRAM)
-		sock.bind(self.IP , self.PORT)
+		sock.bind((self.IP , self.PORT))
 		sock.settimeout(1.0)
-		if(isOneEnable == "-1")
+		if(isOneEnable == "-1"):
 			self.cordinador.cordinadorIP = self.IP
 		else:
 			sock.sendto(b'GMC' ,(isOneEnable,self.cordinador.PORT))
 			data , addr = sock.recvfrom(100)
-			self.cordinador.cordinadorIP = data.decode('utf-8').split()
+			self.cordinador.cordinadorIP = data.decode('utf-8')
 
 		while not self.isCordinator:
-			if(self.cordinador.cordinadorIP == self.IP)
+			print("I am not the cordinator")
+			if(self.cordinador.cordinadorIP == self.IP):
 				self.isCordinator = True
 				break
 			
 			try:
-				sock.sendto(b'AYE',(self.cordinador.cordinadorIP,self.cordinador.PORT))
+				sock.sendto(b"AYE" ,(self.cordinador.cordinadorIP,self.cordinador.PORT))
 				data , addr = sock.recvfrom(100)
 				msg = data.decode('utf-8').split()
-				if(msg[0] == "YBR")
-					continue
-			except socket.Timeouterror as ex:
+				if(msg[0] == "YBR"):
+					sleep(10.0)
+			except socket.timeout as ex:
 				self.cordinador.Eleccion()
 	
+
+		print("I am cordinator")
 		self.sincronizador.start(self.listOfServers,self.IP)
 
 
@@ -65,18 +69,21 @@ class Cordinador:
 		dominios = self.IP.split('.')
 		AuxIp = dominios[0] + '.' + dominios[1] + '.' + dominios[2] + '.'
 		sock = socket.socket(socket.AF_INET , socket.SOCK_DGRAM)
-		sock.settimeout(0.5)
+		sock.settimeout(0.05)
 		isOneEnable = False
 		for i in range(int(dominios[3]),254):
+			if(AuxIp + str(i) == self.IP):
+				continue
 			try:
 				sock.sendto(b'AYE',(AuxIp + str(i) , self.PORT))
 				data , addr = sock.recvfrom(100)
 				msg = data.decode('utf-8').split()
-				if(msg[0] == "YBR")
+				if(msg[0] == "YBR"):
 					isOneEnable = True
 					break;
-			except socket.Timeouterror as ex:
-		mapListOfServers()
+			except socket.timeout as ex:
+				pass
+		self.mapListOfServers()
 		if(not isOneEnable):
 			self.cordinadorIP = self.IP
 			for i in range(2,254):
@@ -87,33 +94,36 @@ class Cordinador:
 			sleep(1.0)			
 
 
-	def mapListOfServers(self)
+	def mapListOfServers(self):
 		dominios = self.IP.split('.')
 		AuxIp = dominios[0] + '.' + dominios[1] + '.' + dominios[2] + '.'
 		sock = socket.socket(socket.AF_INET , socket.SOCK_DGRAM)
-		sock.settimeout(0.5)
+		sock.settimeout(0.05)
 		someOneEnable = "-1"
 		for i in range(2,254):
+			if(AuxIp + str(i) == self.IP):
+				continue
 			try:
 				sock.sendto(b'AYE',(AuxIp + str(i) , self.PORT))
 				data , addr = sock.recvfrom(100)
 				msg = data.decode('utf-8').split()
-				if(msg[0] == "YBR")
+				if(msg[0] == "YBR"):
 					self.listOfServers[i] = AuxIp + str(i)
 					someOneEnable = AuxIp + str(i)
-			except socket.Timeouterror as ex:
+			except socket.timeout as ex:
 				self.listOfServers[i] = "-1"
 		sock.close()
 		return someOneEnable
 
 	def cordinadorListener(self):
 		sock = socket.socket(socket.AF_INET , socket.SOCK_DGRAM)
-        sock.bind((self.IP , self.PORT))
+		sock.bind((self.IP , self.PORT))
 		while True:
-            data , addr = sock.recvfrom(100)
-            cmdArgs = data.decode('utf-8').split()
-            print(cmdArgs[0])
-            if(cmdArgs[0] == "AYE"):
+			data , addr = sock.recvfrom(100)
+			cmdArgs = data.decode('utf-8').split()
+			print(cmdArgs[0])
+			if(cmdArgs[0] == "AYE"):
+				self.listOfServers[self.getIpIndex(addr[0])] = addr[0]
 				sock.sendto(b'YBR',(addr))
 			elif(cmdArgs[0] == "MLLE"):
 				self.cordinadorIP = "-1"
@@ -122,7 +132,10 @@ class Cordinador:
 				self.cordinadorIP = addr[0]
 			elif(cmdArgs[0] == "GMC"):
 				sock.sendto(self.cordinadorIP.encode('utf-8'),(addr))
-	
+
+	def getIpIndex(self , IP):
+		dominios = IP.split('.')
+		return int(dominios[3])
 
 
 class Sincronizador:
